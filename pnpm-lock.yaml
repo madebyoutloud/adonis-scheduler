@@ -840,7 +840,7 @@ packages:
     resolution: {integrity: sha512-1y6DgTy8Jomcpu33N+p5w58l6xyt55Ar2I91RPiIA0xCJBXyUAhXCcmZaDWSANiha7R9a6qJJ2CRomGPZ6f46g==}
 
   '@outloud/eslint-config@2.0.5':
-    resolution: {integrity: sha1-+ZyNFTJLKt9BIbNXgP2LAPnNHg0=, tarball: https://git.outloud.dev/api/v4/projects/245/packages/npm/@outloud/eslint-config/-/@outloud/eslint-config-2.0.5.tgz}
+    resolution: {integrity: sha512-0oAZKSdPmLsOaTAje0d4wB01Y5Ry+r5ga4MQ3XfIvp3AiRJQ+pQPq3KXKn+rVVRTTHpmdPk5L7nepV0e11d5kA==}
     peerDependencies:
       eslint: ^9
 
