@@ -138,7 +138,7 @@ export class Scheduler {
     try {
       definition.jobs.push(task)
 
-      const promise = task.run()
+      const promise = this.resolver.call(task, 'run')
         // make sure cancel waits for the lock release
         .finally(() => lock?.release())
 
