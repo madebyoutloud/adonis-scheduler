@@ -119,7 +119,7 @@ export class Scheduler {
 
   private async run(definition: TaskDefinition) {
     const task = await this.make(definition)
-    const lock = definition.lock ? this.locks?.createLock(`scheduler:${definition.schedule}`) : undefined
+    const lock = definition.lock ? this.locks?.createLock(`scheduler:${task.name}`) : undefined
 
     if (definition.lock && !this.locks) {
       this.logger.warn('Lock is not available, install @adonisjs/lock to use task locking.')
