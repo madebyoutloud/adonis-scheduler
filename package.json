@@ -1,0 +1,60 @@
+{
+  "name": "@outloud/adonis-scheduler",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Schedule cron tasks in AdonisJS applications.",
+  "scripts": {
+    "copy:templates": "copyfiles \"stubs/**/*.stub\" build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . ",
+    "lint:fix": "eslint --fix .",
+    "quick:test": "node --import=./tsnode.esm.js --enable-source-maps bin/test.ts",
+    "pretest": "pnpm run lint",
+    "test": "c8 pnpm run quick:test",
+    "prepack": "pnpm run build",
+    "precompile": "pnpm run lint && rm -rf build",
+    "compile": "tsup-node",
+    "postcompile": "pnpm run copy:templates && pnpm run index:commands",
+    "build": "rm -rf build && pnpm run compile",
+    "release": "release-it",
+    "index:commands": "adonis-kit index build/commands",
+    "version": "pnpm run build",
+    "prepublishOnly": "pnpm run build"
+  },
+  "files": [
+    "build"
+  ],
+  "exports": {
+    ".": "./build/index.js",
+    "./provider": "./build/providers/scheduler.provider.js",
+    "./commands": "./build/commands/main.js",
+    "./services/*": "./build/services/*.js"
+  },
+  "peerDependencies": {
+    "@adonisjs/core": "^6",
+    "@adonisjs/lock": "^1"
+  },
+  "peerDependenciesMeta": {
+    "@adonisjs/lock": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@adonisjs/assembler": "^7.8.2",
+    "@adonisjs/core": "~6.19.0",
+    "@adonisjs/lock": "^1.1.1",
+    "@adonisjs/tsconfig": "^1.4.1",
+    "@outloud/eslint-config": "^2.0.5",
+    "@swc/core": "^1.13.3",
+    "@types/node": "^24.2.1",
+    "copyfiles": "^2.4.1",
+    "eslint": "^9.33.0",
+    "reflect-metadata": "^0.2.2",
+    "release-it": "^19.0.4",
+    "tsup": "~8.5.0",
+    "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "croner": "^9"
+  }
+}

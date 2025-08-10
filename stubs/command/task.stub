@@ -1,0 +1,16 @@
+{{#var name = string(entity.name).removeSuffix('task').suffix('Task').pascalCase().toString()}}
+{{#var fileName = string(entity.name).removeSuffix('task').suffix('.task').snakeCase().removeExtension().ext('.ts').toString()}}
+{{{
+  exports({ to: app.makePath('app/tasks', entity.path, fileName) })
+}}}
+import { Task, type TaskOptions } from '@outloud/adonis-scheduler'
+
+export default class {{ name }} extends Task {
+  static options: TaskOptions = {
+    schedule: '* * * * *'
+  }
+
+  async run(): Promise<void> {
+
+  }
+}
