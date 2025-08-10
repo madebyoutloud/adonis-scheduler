@@ -11,6 +11,11 @@ export interface SchedulerConfig {
    * Warn when a task is locked and cannot be run
    */
   warnWhenLocked: boolean
+
+  /**
+   * The default ttl for the lock.
+   */
+  lockDuration: number | string
 }
 
 export interface TaskOptions {
@@ -31,9 +36,11 @@ export interface TaskOptions {
   /**
    * Lock the task to prevent it from running concurrently.
    *
+   * If a string or number is provided, it will be as ttl.
+   *
    * @default false
    */
-  lock?: boolean
+  lock?: boolean | number | string
 }
 
 export interface TaskRegisterOptions extends TaskOptions {
