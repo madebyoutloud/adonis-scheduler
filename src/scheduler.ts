@@ -219,5 +219,7 @@ export class Scheduler {
     }, () => this.run(definition))
 
     definition.state = 'ready'
+
+    this.logger.debug(`Scheduler: Task "${definition.task?.name}" scheduled with "${definition.schedule}"`)
   }
 }
