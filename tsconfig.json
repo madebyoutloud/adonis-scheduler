@@ -7,5 +7,5 @@
     "emitDecoratorMetadata": true,
     "verbatimModuleSyntax": true
   },
-  "exclude": ["dist", "build"]
+  "exclude": ["dist", "build", "playground"]
 }

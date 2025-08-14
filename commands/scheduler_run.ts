@@ -10,14 +10,13 @@ export default class SchedulerRun extends BaseCommand {
 
   static options: CommandOptions = {
     startApp: true,
+    staysAlive: true,
   }
 
   private scheduler?: Scheduler
 
   prepare() {
-    this.app.terminating(async () => {
-      await this.scheduler?.stop()
-    })
+    this.app.terminating(() => this.scheduler?.stop())
   }
 
   @inject()

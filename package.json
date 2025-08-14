@@ -2,7 +2,21 @@
   "name": "@outloud/adonis-scheduler",
   "type": "module",
   "version": "1.0.4",
-  "description": "Schedule cron tasks in AdonisJS applications.",
+  "description": "Schedule cron jobs in AdonisJS.",
+  "author": "Outloud <hello@outloud.co>",
+  "contributors": [
+    "Andrej Adamcik"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/madebyoutloud/adonis-scheduler#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madebyoutloud/adonis-scheduler.git"
+  },
+  "publishConfig": {
+    "tag": "latest",
+    "access": "public"
+  },
   "scripts": {
     "copy:templates": "copyfiles \"stubs/**/*.stub\" build",
     "typecheck": "tsc --noEmit",
