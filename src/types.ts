@@ -59,6 +59,13 @@ export type ErrorHandler = (error: Error, task: Task) => (void | Promise<void>)
 
 export type SchedulerState = 'created' | 'starting' | 'running' | 'stopping' | 'stopped'
 
+export interface SchedulerEvents {
+  'scheduler:error': {
+    error: Error
+    task: Task
+  }
+}
+
 // utils
 export type MaybePromise<T> = T | Promise<T>
 

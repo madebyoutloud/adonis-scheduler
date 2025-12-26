@@ -1,7 +1,7 @@
 import type { ApplicationService } from '@adonisjs/core/types'
 import type { LockService } from '@adonisjs/lock/types'
 import { Scheduler } from '../src/scheduler.js'
-import type { SchedulerConfig } from '../src/types.js'
+import type { SchedulerConfig, SchedulerEvents } from '../src/types.js'
 
 export default class SchedulerProvider {
   private scheduler?: Scheduler
@@ -24,6 +24,7 @@ export default class SchedulerProvider {
         this.getConfig(),
         this.app.container.createResolver(),
         await this.app.container.make('logger'),
+        await this.app.container.make('emitter'),
         await this.getLocks(),
       )
     })
@@ -49,4 +50,6 @@ declare module '@adonisjs/core/types' {
   export interface ContainerBindings {
     scheduler: Scheduler
   }
+
+  export interface EventsList extends SchedulerEvents {}
 }

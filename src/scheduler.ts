@@ -1,8 +1,9 @@
 import type { ContainerResolver } from '@adonisjs/core/container'
-import type { ContainerBindings } from '@adonisjs/core/types'
+import type { ContainerBindings, EventsList } from '@adonisjs/core/types'
 import type { LockService } from '@adonisjs/lock/types'
 import type { Logger } from '@adonisjs/core/logger'
 import { Cron } from 'croner'
+import type { Emitter } from '@adonisjs/core/events'
 import type { Task } from './task.js'
 import type {
   ErrorHandler,
@@ -23,6 +24,7 @@ export class Scheduler {
     private config: SchedulerConfig,
     private resolver: ContainerResolver<ContainerBindings>,
     private logger: Logger,
+    private emitter: Emitter<EventsList>,
     private locks?: LockService,
   ) {}
 
@@ -177,17 +179,15 @@ export class Scheduler {
   }
 
   private async handleError(error: Error, _: TaskDefinition, task: Task) {
-    if (task && task.onError) {
-      await task.onError(error)
-      return
-    }
+    await task.onError?.(error)
 
-    if (this.errorHandler) {
-      await this.errorHandler(error, task)
-      return
-    }
+    this.emitter.emit('scheduler:error', { error, task })
 
-    throw error
+    await this.errorHandler?.(error, task)
+
+    if (!this.emitter.hasListeners('scheduler:error') && !this.errorHandler) {
+      throw error
+    }
   }
 
   private async cancel(job: Task) {
