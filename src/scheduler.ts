@@ -1,5 +1,5 @@
 import type { ContainerResolver } from '@adonisjs/core/container'
-import type { ContainerBindings, EventsList } from '@adonisjs/core/types'
+import type { ContainerBindings } from '@adonisjs/core/types'
 import type { LockService } from '@adonisjs/lock/types'
 import type { Logger } from '@adonisjs/core/logger'
 import { Cron } from 'croner'
@@ -24,7 +24,7 @@ export class Scheduler {
     private config: SchedulerConfig,
     private resolver: ContainerResolver<ContainerBindings>,
     private logger: Logger,
-    private emitter: Emitter<EventsList>,
+    private emitter: Emitter<any>,
     private locks?: LockService,
   ) {}
 
