@@ -1,7 +1,7 @@
 {
   "name": "@outloud/adonis-scheduler",
   "type": "module",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Schedule cron jobs in AdonisJS.",
   "author": "Outloud <hello@outloud.co>",
   "contributors": [
