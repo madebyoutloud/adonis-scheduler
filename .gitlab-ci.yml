@@ -3,15 +3,11 @@ stages:
 
 publish:library:
   stage: publish
-  image: node:24-alpine
+  image: $OUTLOUD_DOCKER_URL/node:latest
   resource_group: library
   rules:
     - if: $CI_COMMIT_TAG =~ /^v.*$/
     - if: $CI_PIPELINE_SOURCE == "web" && $PIPELINE == "publish"
-  before_script:
-    - corepack enable
-    - corepack prepare pnpm@latest-10 --activate
-    - pnpm config set store-dir .pnpm-store
   script:
     - pnpm i
 
