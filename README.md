@@ -23,6 +23,7 @@
 - Cancellation support for long-running tasks.
 - Graceful shutdown.
 - Global and task-level error handling.
+- Auto-discovery of tasks.
 
 ## Getting Started
 
@@ -57,8 +58,12 @@ export default class TestTask extends Task {
 ```
 
 ### Register a task
+For task to run it must be registered in the scheduler.
 
-For task to run it must be registered in the scheduler. You can register tasks in two ways: using the `start/scheduler.ts` preloaded file or in a provider's `start` method.
+> [!NOTE]
+> By default tasks are auto-discovered using the locations defined in config.
+
+If you want to register tasks manually, you can register tasks in two ways: using the `start/scheduler.ts` preloaded file or in a provider's `start` method.
 
 Using `start/scheduler.ts` file.
 
