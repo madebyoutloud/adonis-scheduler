@@ -16,6 +16,9 @@ export interface SchedulerConfig {
    * The default ttl for the lock.
    */
   lockDuration: number | string
+
+  /** Locations for task auto-discovery */
+  locations?: string[]
 }
 
 export interface TaskOptions {

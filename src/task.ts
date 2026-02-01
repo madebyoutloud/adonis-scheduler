@@ -7,6 +7,10 @@ export abstract class Task {
 
   static options: TaskOptions
 
+  static isTask(obj: unknown): obj is typeof Task {
+    return typeof obj === 'function' && obj.prototype instanceof Task
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-useless-constructor
   constructor(..._: any[]) {
     // ignore

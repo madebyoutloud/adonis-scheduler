@@ -1,10 +1,12 @@
+import { glob } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import type { ContainerResolver } from '@adonisjs/core/container'
 import type { ContainerBindings } from '@adonisjs/core/types'
 import type { LockService } from '@adonisjs/lock/types'
 import type { Logger } from '@adonisjs/core/logger'
 import { Cron } from 'croner'
 import type { Emitter } from '@adonisjs/core/events'
-import type { Task } from './task.js'
+import { Task } from './task.js'
 import type {
   ErrorHandler,
   Factory,
@@ -28,7 +30,7 @@ export class Scheduler {
     private locks?: LockService,
   ) {}
 
-  register(options: TaskRegisterOptions | Factory<typeof Task>): this {
+  register(options: TaskRegisterOptions | typeof Task | Factory<typeof Task>): this {
     const definition: TaskDefinition = {
       schedule: '* * * * *',
       state: 'created',
@@ -44,11 +46,14 @@ export class Scheduler {
           static command = command
         }
       })
+    } else if (Task.isTask(options)) {
+      definition.task = options
+      Object.assign(definition, options.options ?? {})
     } else {
       definition.loader = options
     }
 
-    if (!definition.loader) {
+    if (!definition.task && !definition.loader) {
       throw new Error('Task definition must have either a command or a task defined.')
     }
 
@@ -68,6 +73,10 @@ export class Scheduler {
     }
 
     this.setState('starting')
+
+    if (this.config.locations) {
+      await Promise.all(this.config.locations.map((location) => this.registerFromGlob(location)))
+    }
 
     await Promise.all(this.definitions.map((definition) => this.schedule(definition)))
 
@@ -100,6 +109,23 @@ export class Scheduler {
   onError(callback: ErrorHandler): this {
     this.errorHandler = callback
     return this
+  }
+
+  private async registerFromGlob(pattern: string) {
+    const normalizedPattern = pattern.replace(/\.(?:js|ts)$/, '.{js,ts}')
+
+    for await (const file of glob(normalizedPattern)) {
+      try {
+        const absolutePath = resolve(file)
+        const module = await import(`file://${absolutePath}`)
+
+        if (Task.isTask(module.default)) {
+          this.register(module.default)
+        }
+      } catch (error) {
+        console.warn(`Failed to load task from ${file}:`, error)
+      }
+    }
   }
 
   private async load(definition: TaskDefinition) {
