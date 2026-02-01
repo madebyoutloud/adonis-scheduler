@@ -13,10 +13,6 @@
     "type": "git",
     "url": "git+https://github.com/madebyoutloud/adonis-scheduler.git"
   },
-  "publishConfig": {
-    "tag": "latest",
-    "access": "public"
-  },
   "scripts": {
     "copy:templates": "copyfiles \"stubs/**/*.stub\" build",
     "typecheck": "tsc --noEmit",
@@ -25,15 +21,12 @@
     "quick:test": "node --import=./tsnode.esm.js --enable-source-maps bin/test.ts",
     "pretest": "pnpm run lint",
     "test": "c8 pnpm run quick:test",
-    "prepack": "pnpm run build",
     "precompile": "pnpm run lint && rm -rf build",
     "compile": "tsup-node",
     "postcompile": "pnpm run copy:templates && pnpm run index:commands",
     "build": "rm -rf build && pnpm run compile",
     "release": "release-it",
-    "index:commands": "adonis-kit index build/commands",
-    "version": "pnpm run build",
-    "prepublishOnly": "pnpm run build"
+    "index:commands": "adonis-kit index build/commands"
   },
   "files": [
     "build"
