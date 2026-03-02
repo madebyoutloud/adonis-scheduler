@@ -1,4 +1,3 @@
-import 'reflect-metadata'
 import { args, BaseCommand } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 

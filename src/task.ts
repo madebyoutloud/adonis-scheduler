@@ -23,7 +23,7 @@ export abstract class Task {
 
   abstract run(...args: any[]): Promise<void>
 
-  async $cancel() {
+  async cancel() {
     this.isCanceled = true
     await this.onCancel?.()
     await this.promise

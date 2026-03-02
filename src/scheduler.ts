@@ -217,7 +217,7 @@ export class Scheduler {
   }
 
   private async cancel(job: Task) {
-    await job.$cancel()
+    await job.cancel()
   }
 
   private async terminate(definition: TaskDefinition) {

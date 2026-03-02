@@ -1,19 +1,15 @@
-<div align="center">
-  <h2><b>Adonis Scheduler</b></h2>
-  
-  <p>
+# AdonisJS Scheduler
 
-`@outloud/adonis-scheduler` is a cron job scheduler for [AdonisJS](https://adonisjs.com/).
+Cron job scheduler for [AdonisJS](https://adonisjs.com/) 6/7.
 
-  </p>
-</div>
+<p>
 
+[![typescript-image]][typescript-url]
+[![npm-image]][npm-url]
+[![npm-download-image]][npm-download-url]
+[![license-image]][license-url]
 
-<div align="center">
-
-[![npm-image]][npm-url] [![license-image]][license-url]
-
-</div>
+</p>
 
 ---
 ## Features
@@ -116,6 +112,77 @@ To run it as part of the **HTTP server**, set following env variable:
 SCHEDULER_HTTP_SERVER=true
 ```
 
+You can also create a custom worker command that runs the scheduler. This is useful if you want to add health checks or run other logic with the scheduler.
+
+```ts [commands/worker.ts]
+import { createServer, type Server as HttpServer } from 'node:http'
+import { BaseCommand } from '@adonisjs/core/ace'
+import { Server } from '@adonisjs/core/http'
+import type { CommandOptions } from '@adonisjs/core/types/ace'
+import { inject } from '@adonisjs/core'
+import { Scheduler } from '@outloud/adonis-scheduler'
+import type { ApplicationService } from '@adonisjs/core/types'
+
+export default class extends BaseCommand {
+  static commandName = 'worker'
+  static description = 'Run a worker process.'
+
+  static options: CommandOptions = {
+    startApp: true,
+    staysAlive: true,
+  }
+
+  private server?: HttpServer
+  private scheduler?: Scheduler
+
+  prepare() {
+    this.app.terminating(() => this.server?.close())
+    this.app.terminating(() => this.scheduler?.stop())
+  }
+
+  @inject()
+  async run(scheduler: Scheduler): Promise<void> {
+    this.scheduler = scheduler
+
+    await Promise.all([
+      this.startServer(),
+      this.scheduler.start(true),
+    ])
+  }
+
+  private async startServer() {
+    const server = await this.makeServer()
+    const httpServer = createServer(server.handle.bind(server))
+    this.server = httpServer
+    await server.boot()
+
+    server.setNodeServer(httpServer)
+
+    const host = process.env.HOST || '0.0.0.0'
+    const port = Number(process.env.PORT || '3000')
+
+    httpServer.once('listening', () => this.logger.info(`listening to http server, host: ${host}, port: ${port}`))
+
+    return httpServer.listen(port, host)
+  }
+
+  private async makeServer() {
+    const server = new Server(
+      this.app,
+      await this.app.container.make('encryption'),
+      await this.app.container.make('emitter'),
+      await this.app.container.make('logger'),
+      this.app.config.get<any>('app.http'),
+    )
+
+    const router = server.getRouter()
+    router.get('/health', () => ({ status: 'ok' }))
+
+    return server
+  }
+}
+```
+
 ## Locking
 
 > [!NOTE]
@@ -162,19 +229,36 @@ export default class TestTask extends Task {
 
 It's possible to globally handle errors for all your tasks or define custom error handler for each task.
 
+### Global error handler
+
 To register global error handler, you can use the `onError` method of the scheduler service. You can define it in `start/scheduler.ts` preloaded file.
 This handler will run only if custom error handler is not defined in the task itself.
 
 ```ts
 import logger from '@adonisjs/core/services/logger'
 import scheduler from '@outloud/adonis-scheduler/services/main'
-import { Sentry } from '@rlanz/sentry'
 
 scheduler.onError((error, task) => {
   logger.error(error)
-  Sentry.captureException(error)
 })
 ```
+
+Or you can listen to `scheduler:error` event using emitter.
+
+```ts
+import emitter from '@adonisjs/core/services/emitter'
+import logger from '@adonisjs/core/services/logger'
+
+emitter.on('scheduler:error', ({ error, task }) => {
+  logger.error(error)
+})
+```
+
+> [!WARNING]
+> When you register global error handler, the package will not throw any errors and it's your responsibility to log or handle them in the handler.
+> If you don't register global error handler, the package will throw error and exit.
+
+### Task-level error handler
 
 Custom error handler can be defined in the task itself by implementing `onError` method.
 
@@ -188,8 +272,14 @@ export default class TestTask extends Task {
 }
 ```
 
-[npm-image]: https://img.shields.io/npm/v/@outloud/adonis-scheduler.svg?style=for-the-badge&logo=**npm**
+[npm-image]: https://badgen.net/npm/v/@outloud/adonis-scheduler/latest
 [npm-url]: https://npmjs.org/package/@outloud/adonis-scheduler "npm"
 
-[license-image]: https://img.shields.io/npm/l/@outloud/adonis-scheduler?color=blueviolet&style=for-the-badge
-[license-url]: LICENSE "license"
+[npm-download-image]: https://badgen.net/npm/dm/@outloud/adonis-scheduler
+[npm-download-url]: https://npmcharts.com/compare/@outloud/adonis-scheduler?minimal=true "downloads"
+
+[typescript-image]: https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white
+[typescript-url]: https://www.typescriptlang.org "TypeScript"
+
+[license-image]: https://img.shields.io/npm/l/@outloud/adonis-scheduler.svg?sanitize=true
+[license-url]: LICENSE.md "license"
