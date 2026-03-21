@@ -56,9 +56,16 @@ export default class TestTask extends Task {
 ### Register a task
 For task to run it must be registered in the scheduler.
 
-> [!NOTE]
-> By default tasks are auto-discovered using the locations defined in config.
+#### Auto-discovery (recommended)
+By default tasks are auto-discovered using the locations defined in `config/scheduler.ts`.
 
+```ts
+const schedulerConfig = defineConfig({
+  locations: ['./app/**/*.task.js'],
+})
+```
+
+#### Manual registration
 If you want to register tasks manually, you can register tasks in two ways: using the `start/scheduler.ts` preloaded file or in a provider's `start` method.
 
 Using `start/scheduler.ts` file.
@@ -69,7 +76,7 @@ import scheduler from '@outloud/adonis-scheduler/services/main'
 scheduler.register(() => import('../app/tasks/test.task.js'))
 ```
 
-Or using a provider.
+Or in a any provider's `start` method.
 
 ```ts
 import type { ApplicationService } from '@adonisjs/core/types'
@@ -117,11 +124,9 @@ You can also create a custom worker command that runs the scheduler. This is use
 ```ts [commands/worker.ts]
 import { createServer, type Server as HttpServer } from 'node:http'
 import { BaseCommand } from '@adonisjs/core/ace'
-import { Server } from '@adonisjs/core/http'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { inject } from '@adonisjs/core'
 import { Scheduler } from '@outloud/adonis-scheduler'
-import type { ApplicationService } from '@adonisjs/core/types'
 
 export default class extends BaseCommand {
   static commandName = 'worker'
@@ -136,7 +141,9 @@ export default class extends BaseCommand {
   private scheduler?: Scheduler
 
   prepare() {
-    this.app.terminating(() => this.server?.close())
+    this.app.terminating(() => {
+      this.server?.close()
+    })
     this.app.terminating(() => this.scheduler?.stop())
   }
 
@@ -152,14 +159,14 @@ export default class extends BaseCommand {
 
   private async startServer() {
     const server = await this.makeServer()
-    const httpServer = createServer(server.handle.bind(server))
-    this.server = httpServer
     await server.boot()
 
+    const httpServer = createServer(server.handle.bind(server))
     server.setNodeServer(httpServer)
+    this.server = httpServer
 
     const host = process.env.HOST || '0.0.0.0'
-    const port = Number(process.env.PORT || '3000')
+    const port = Number(process.env.PORT || 3000)
 
     httpServer.once('listening', () => this.logger.info(`listening to http server, host: ${host}, port: ${port}`))
 
@@ -167,15 +174,9 @@ export default class extends BaseCommand {
   }
 
   private async makeServer() {
-    const server = new Server(
-      this.app,
-      await this.app.container.make('encryption'),
-      await this.app.container.make('emitter'),
-      await this.app.container.make('logger'),
-      this.app.config.get<any>('app.http'),
-    )
-
+    const server = await this.app.container.make('server')
     const router = server.getRouter()
+    
     router.get('/health', () => ({ status: 'ok' }))
 
     return server
