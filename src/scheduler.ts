@@ -37,7 +37,12 @@ export class Scheduler {
       jobs: [],
     }
 
-    if (typeof options === 'object') {
+    if (Task.isTask(options)) {
+      definition.task = options
+      Object.assign(definition, options.options ?? {})
+    } else if (typeof options === 'function') {
+      definition.loader = options
+    } else {
       const command = Array.isArray(options.command) ? options.command : [options.command]
       Object.assign(definition, options)
 
@@ -46,11 +51,6 @@ export class Scheduler {
           static command = command
         }
       })
-    } else if (Task.isTask(options)) {
-      definition.task = options
-      Object.assign(definition, options.options ?? {})
-    } else {
-      definition.loader = options
     }
 
     if (!definition.task && !definition.loader) {
@@ -145,28 +145,28 @@ export class Scheduler {
     return await this.resolver.make(definition.task)
   }
 
-  private async run(definition: TaskDefinition) {
-    const task = await this.make(definition)
+  private resolveLock(task: Task, definition: TaskDefinition) {
+    if (!this.locks) {
+      this.logger.warn('Lock is not available, install @adonisjs/lock to use task locking.')
+      return
+    }
+
     const lockDuration = definition.lock && typeof definition.lock !== 'boolean'
       ? definition.lock
       : this.config.lockDuration
 
-    const lock = definition.lock
-      ? this.locks?.createLock(`scheduler:${task.name}`, lockDuration)
-      : undefined
+    return this.locks.createLock(`scheduler:${task.name}`, lockDuration)
+  }
 
-    if (definition.lock && !this.locks) {
-      this.logger.warn('Lock is not available, install @adonisjs/lock to use task locking.')
-    }
+  private async run(definition: TaskDefinition) {
+    const task = await this.make(definition)
 
-    if (lock) {
-      const acquired = await lock.acquireImmediately()
+    const lock = definition.lock ? this.resolveLock(task, definition) : undefined
 
-      if (!acquired) {
-        this.config.warnWhenLocked && this.logger.warn(`Task "${definition.task?.name}" is locked and cannot be run.`)
+    if (lock && !(await lock.acquireImmediately())) {
+      this.config.warnWhenLocked && this.logger.warn(`Task "${definition.task?.name}" is locked and cannot be run.`)
 
-        return
-      }
+      return
     }
 
     try {
@@ -207,11 +207,12 @@ export class Scheduler {
   private async handleError(error: Error, _: TaskDefinition, task: Task) {
     await task.onError?.(error)
 
-    this.emitter.emit('scheduler:error', { error, task })
-
+    await this.emitter.emit('scheduler:error', { error, task })
     await this.errorHandler?.(error, task)
 
-    if (!this.emitter.hasListeners('scheduler:error') && !this.errorHandler) {
+    const hasNoHandler = !(task.onError || this.emitter.hasListeners('scheduler:error') || this.errorHandler)
+
+    if (hasNoHandler) {
       throw error
     }
   }
