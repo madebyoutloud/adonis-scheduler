@@ -146,6 +146,8 @@ export class Scheduler {
   }
 
   private resolveLock(task: Task, definition: TaskDefinition) {
+    if (!definition.lock) return
+
     if (!this.locks) {
       this.logger.warn('Lock is not available, install @adonisjs/lock to use task locking.')
       return
@@ -160,17 +162,19 @@ export class Scheduler {
 
   private async run(definition: TaskDefinition) {
     const task = await this.make(definition)
-
-    const lock = definition.lock ? this.resolveLock(task, definition) : undefined
-
-    if (lock && !(await lock.acquireImmediately())) {
-      this.config.warnWhenLocked && this.logger.warn(`Task "${definition.task?.name}" is locked and cannot be run.`)
-
-      return
-    }
+    const lock = this.resolveLock(task, definition)
 
     try {
       definition.jobs.push(task)
+
+      if (lock && !(await lock.acquireImmediately())) {
+        this.config.warnWhenLocked && this.logger.warn(`Task "${definition.task?.name}" is locked and cannot be run.`)
+
+        return
+      }
+
+      // canceled during lock acquire
+      if (task.isCanceled) return
 
       const promise = this.resolver.call(task, 'run')
         // make sure cancel waits for the lock release
