@@ -1,8 +1,11 @@
+ignoreWorkspaceRootCheck: true
+verifyDepsBeforeRun: false
+
 packages:
   - .
   - playground
 
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-  - unrs-resolver
+allowBuilds:
+  '@swc/core': false
+  esbuild: false
+  unrs-resolver: false

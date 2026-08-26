@@ -37,7 +37,7 @@ export default class SchedulerProvider {
 
     if (this.app.getEnvironment() === 'web' && config.httpServer) {
       this.scheduler = await this.app.container.make(Scheduler)
-      await this.scheduler.start()
+      this.scheduler.start()
     }
   }
 

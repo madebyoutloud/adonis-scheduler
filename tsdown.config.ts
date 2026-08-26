@@ -13,11 +13,11 @@ export default defineConfig({
   outDir: './build',
   format: ['esm'],
   dts: true,
-  unbundle: true,
+  // unbundle: true,
   platform: 'node',
   target: 'es2022',
   tsconfig: 'tsconfig.build.json',
   deps: {
-    neverBundle: ['reflect-metadata'],
-  }
+    neverBundle: true,
+  },
 })
