@@ -7,8 +7,13 @@ export default createConfig({
   },
   style: {
     complexity: 12,
-  }
+  },
 })
   .append({
     ignores: ['playground/**'],
+  })
+  .append({
+    rules: {
+      '@typescript-eslint/no-empty-function': 'off',
+    },
   })

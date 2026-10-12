@@ -29,9 +29,6 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . ",
     "lint:fix": "eslint --fix .",
-    "quick:test": "node --import=./tsnode.esm.js --enable-source-maps bin/test.ts",
-    "pretest": "pnpm run lint",
-    "test": "c8 pnpm run quick:test",
     "build": "tsdown && pnpm run copy:templates && pnpm run index:commands",
     "release": "release-it",
     "index:commands": "NODE_OPTIONS='--import=reflect-metadata' adonis-kit index build/commands"
@@ -46,20 +43,19 @@
     }
   },
   "devDependencies": {
-    "@adonisjs/assembler": "^8.0.0",
-    "@adonisjs/core": "~7.0.0",
+    "@adonisjs/assembler": "^8.5.2",
+    "@adonisjs/core": "~7.0.1",
     "@adonisjs/lock": "^2.1.0",
     "@adonisjs/tsconfig": "^1.4.1",
     "@outloud/eslint-config": "^2.1.3",
-    "@swc/core": "^1.13.3",
-    "@types/node": "^24.2.1",
+    "@swc/core": "^1.16.18",
+    "@types/node": "^24.19.2",
     "copyfiles": "^2.4.1",
-    "eslint": "^9.33.0",
+    "eslint": "^9.39.5",
     "reflect-metadata": "^0.2.2",
-    "release-it": "^19.0.4",
-    "tsdown": "0.22.14",
-    "tsup": "~8.5.0",
-    "typescript": "~5.9.2"
+    "release-it": "^19.2.4",
+    "tsdown": "0.23.1",
+    "typescript": "~5.9.3"
   },
   "dependencies": {
     "croner": "^9"

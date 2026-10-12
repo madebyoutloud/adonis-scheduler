@@ -191,6 +191,8 @@ export default class extends BaseCommand {
 
 The scheduler supports locking to prevent multiple instances of the same task from running concurrently. You can enable locking by setting the `lock` option in the task options.
 
+While the task is running, the lock is automatically renewed at half of its ttl, so long-running tasks keep the lock even when they run longer than the configured ttl. The ttl only matters when the process dies, as it controls how long until the lock expires.
+
 ```ts
 import { Task, type TaskOptions } from '@outloud/adonis-scheduler'
 
@@ -208,7 +210,7 @@ export default class TestTask extends Task {
 
 ## Cancellation
 
-The package supports cancellation and graceful shutdown. You can add `onCancel` handler in your task or watch for `isCanceled` property.
+The package supports cancellation and graceful shutdown. You can add `onCancel` handler in your task, watch for `isCanceled` property, or pass `signal` (an `AbortSignal`) to APIs that support it.
 
 ```ts
 import { Task } from '@outloud/adonis-scheduler'
@@ -217,6 +219,7 @@ export default class TestTask extends Task {
   async run(): Promise<void> {
     while (!this.isCanceled) {
       // Your task logic here
+      await fetch('https://example.com', { signal: this.signal })
     }
   }
 

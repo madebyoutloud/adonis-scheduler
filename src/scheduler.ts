@@ -174,18 +174,14 @@ export class Scheduler {
       }
 
       // canceled during lock acquire
-      if (task.isCanceled) return
+      if (task.isCanceled) {
+        await lock?.release()
+        return
+      }
 
-      const promise = this.resolver.call(task, 'run')
-        // make sure cancel waits for the lock release
-        .finally(() => lock?.release())
+      if (lock) task.$setLock(lock)
 
-      // do not throw error if you try to await the task, e.g. in cancel
-      task.promise = promise.catch(() => {
-        // ignore
-      })
-
-      await promise
+      await task.execute(this.resolver)
     } catch (error) {
       await this.handleError(error as Error, definition, task)
     } finally {
