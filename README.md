@@ -193,6 +193,8 @@ The scheduler supports locking to prevent multiple instances of the same task fr
 
 While the task is running, the lock is automatically renewed at half of its ttl, so long-running tasks keep the lock even when they run longer than the configured ttl. The ttl only matters when the process dies, as it controls how long until the lock expires.
 
+If the lock is lost while the task is running (e.g. another process acquired it, or the lock store was unreachable until the lock expired), the task is canceled the same way as on shutdown: `signal` is aborted and `onCancel` is called. An `errors.E_LOCK_LOST` exception is then passed to the error handlers, and it is also available as `this.signal.reason`.
+
 ```ts
 import { Task, type TaskOptions } from '@outloud/adonis-scheduler'
 

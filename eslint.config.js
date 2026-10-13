@@ -17,3 +17,9 @@ export default createConfig({
       '@typescript-eslint/no-empty-function': 'off',
     },
   })
+  .append({
+    files: ['test/**'],
+    rules: {
+      'max-lines-per-function': 'off',
+    },
+  })

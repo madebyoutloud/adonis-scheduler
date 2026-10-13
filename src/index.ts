@@ -1,5 +1,6 @@
 export { Scheduler } from './scheduler.js'
 export { Task } from './task.js'
+export { errors } from './errors.js'
 export type { SchedulerConfig, TaskOptions } from './types.js'
 
 export { configure } from './configure.js'

@@ -4,9 +4,11 @@ variables:
     value: publish
     options: [publish]
 
-stages: [publish]
+stages: [test, publish]
 
 include:
+  - component: $OUTLOUD_CI/test-nodejs@4
+
   - component: $OUTLOUD_CI/publish-npm@4
     inputs:
       registry: [npm, gitlab]

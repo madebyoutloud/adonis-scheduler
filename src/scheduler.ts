@@ -6,6 +6,7 @@ import type { LockService } from '@adonisjs/lock/types'
 import type { Logger } from '@adonisjs/core/logger'
 import { Cron } from 'croner'
 import type { Emitter } from '@adonisjs/core/events'
+import { errors } from './errors.js'
 import { Task } from './task.js'
 import type {
   ErrorHandler,
@@ -181,9 +182,14 @@ export class Scheduler {
 
       if (lock) task.$setLock(lock)
 
-      await task.execute(this.resolver)
+      await task.$execute(this.resolver)
+
+      // task ignored the abort and finished anyway
+      if (task.signal.reason instanceof errors.E_LOCK_LOST) throw task.signal.reason
     } catch (error) {
-      await this.handleError(error as Error, definition, task)
+      // report the lost lock rather than the abort error it caused
+      const reason = task.signal.reason instanceof errors.E_LOCK_LOST ? task.signal.reason : error
+      await this.handleError(reason as Error, definition, task)
     } finally {
       definition.jobs.splice(definition.jobs.indexOf(task), 1)
     }
