@@ -119,6 +119,26 @@ To run it as part of the **HTTP server**, set following env variable:
 SCHEDULER_HTTP_SERVER=true
 ```
 
+### Running a single task
+
+To run a single task once, regardless of its schedule (e.g. for debugging or manual trigger), pass the path to the task file relative to the application root. Use the `.js` extension, it works in development too. Subpath imports (e.g. `#tasks/cleanup_task`) are supported as well.
+
+```bash
+node ace task:run app/tasks/cleanup_task.js
+```
+
+The task runs the same way as when scheduled: it respects the `lock` option, error handlers are called, and it is canceled on `SIGINT` / `SIGTERM`. The command exits with code `1` when the task fails, is locked or canceled.
+
+You can run a task programmatically using `scheduler.runOnce()`, which resolves with the run result (`completed`, `failed`, `locked` or `canceled`). To cancel all running jobs (scheduled and run once) and wait for them to finish, use `scheduler.cancel()`.
+
+```ts
+import scheduler from '@outloud/adonis-scheduler/services/main'
+
+const result = await scheduler.runOnce(() => import('#tasks/cleanup_task'))
+```
+
+### Custom worker command
+
 You can also create a custom worker command that runs the scheduler. This is useful if you want to add health checks or run other logic with the scheduler.
 
 ```ts [commands/worker.ts]

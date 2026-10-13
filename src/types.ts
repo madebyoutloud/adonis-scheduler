@@ -60,6 +60,11 @@ export interface TaskDefinition extends TaskOptions {
 
 export type ErrorHandler = (error: Error, task: Task) => (void | Promise<void>)
 
+/**
+ * Outcome of a single task run.
+ */
+export type TaskRunResult = 'completed' | 'failed' | 'locked' | 'canceled'
+
 export type SchedulerState = 'created' | 'starting' | 'running' | 'stopping' | 'stopped'
 
 export interface SchedulerEvents {

@@ -15,11 +15,13 @@ import type {
   SchedulerState,
   TaskDefinition,
   TaskRegisterOptions,
+  TaskRunResult,
 } from './types.js'
 import { waitUntil } from './helpers.js'
 
 export class Scheduler {
   private definitions: TaskDefinition[] = []
+  private oneOffs = new Set<TaskDefinition>()
   private state: SchedulerState = 'created'
   private errorHandler?: ErrorHandler
 
@@ -32,6 +34,33 @@ export class Scheduler {
   ) {}
 
   register(options: TaskRegisterOptions | typeof Task | Factory<typeof Task>): this {
+    const definition = this.define(options)
+    this.definitions.push(definition)
+
+    if (this.hasState(['starting', 'running'])) {
+      this.schedule(definition)
+    }
+
+    return this
+  }
+
+  /**
+   * Run a task once right away, regardless of its schedule and scheduler state.
+   * Locking and error handling work the same way as for scheduled runs.
+   */
+  async runOnce(options: TaskRegisterOptions | typeof Task | Factory<typeof Task>): Promise<TaskRunResult> {
+    const definition = this.define(options)
+    this.oneOffs.add(definition)
+
+    try {
+      await this.load(definition)
+      return await this.run(definition)
+    } finally {
+      this.oneOffs.delete(definition)
+    }
+  }
+
+  private define(options: TaskRegisterOptions | typeof Task | Factory<typeof Task>): TaskDefinition {
     const definition: TaskDefinition = {
       schedule: '* * * * *',
       state: 'created',
@@ -58,13 +87,7 @@ export class Scheduler {
       throw new Error('Task definition must have either a command or a task defined.')
     }
 
-    this.definitions.push(definition)
-
-    if (this.hasState(['starting', 'running'])) {
-      this.schedule(definition)
-    }
-
-    return this
+    return definition
   }
 
   async start(wait = false) {
@@ -103,8 +126,18 @@ export class Scheduler {
     }
 
     this.setState('stopping')
-    await Promise.all(this.definitions.map((definition) => this.terminate(definition)))
+    this.definitions.forEach((definition) => this.unschedule(definition))
+    await this.cancel()
     this.setState('stopped')
+  }
+
+  /**
+   * Cancel all running jobs, scheduled and run once, and wait for them to finish.
+   * Scheduled tasks keep running on their schedule, use stop() to stop them.
+   */
+  async cancel() {
+    const jobs = [...this.definitions, ...this.oneOffs].flatMap((definition) => definition.jobs)
+    await Promise.all(jobs.map((job) => job.cancel()))
   }
 
   onError(callback: ErrorHandler): this {
@@ -161,7 +194,7 @@ export class Scheduler {
     return this.locks.createLock(`scheduler:${task.name}`, lockDuration)
   }
 
-  private async run(definition: TaskDefinition) {
+  private async run(definition: TaskDefinition): Promise<TaskRunResult> {
     const task = await this.make(definition)
     const lock = this.resolveLock(task, definition)
 
@@ -171,13 +204,13 @@ export class Scheduler {
       if (lock && !(await lock.acquireImmediately())) {
         this.config.warnWhenLocked && this.logger.warn(`Task "${definition.task?.name}" is locked and cannot be run.`)
 
-        return
+        return 'locked'
       }
 
       // canceled during lock acquire
       if (task.isCanceled) {
         await lock?.release()
-        return
+        return 'canceled'
       }
 
       if (lock) task.$setLock(lock)
@@ -186,10 +219,14 @@ export class Scheduler {
 
       // task ignored the abort and finished anyway
       if (task.signal.reason instanceof errors.E_LOCK_LOST) throw task.signal.reason
+
+      return task.isCanceled ? 'canceled' : 'completed'
     } catch (error) {
       // report the lost lock rather than the abort error it caused
       const reason = task.signal.reason instanceof errors.E_LOCK_LOST ? task.signal.reason : error
       await this.handleError(reason as Error, definition, task)
+
+      return 'failed'
     } finally {
       definition.jobs.splice(definition.jobs.indexOf(task), 1)
     }
@@ -223,16 +260,9 @@ export class Scheduler {
     }
   }
 
-  private async cancel(job: Task) {
-    await job.cancel()
-  }
-
-  private async terminate(definition: TaskDefinition) {
+  private unschedule(definition: TaskDefinition) {
     definition.cron?.stop()
     definition.cron = undefined
-
-    await Promise.all(definition.jobs.map((job) => this.cancel(job)))
-
     definition.state = 'created'
   }
 
@@ -249,7 +279,9 @@ export class Scheduler {
 
     definition.cron = new Cron(definition.schedule, {
       timezone: definition.timeZone,
-    }, () => this.run(definition))
+    }, async () => {
+      await this.run(definition)
+    })
 
     definition.state = 'ready'
 
